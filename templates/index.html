@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>Online Exam Monitoring</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f5f7fb;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .card {
+            background: #ffffff;
+            padding: 24px 28px;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+            max-width: 420px;
+            width: 100%;
+        }
+
+        .video-container {
+            margin: 16px 0 20px;
+            border-radius: 12px;
+            overflow: hidden;
+            background: #000000;
+        }
+
+        .video-container img {
+            display: block;
+            width: 100%;
+            height: auto;
+        }
+
+        h1 {
+            font-size: 22px;
+            margin-top: 0;
+            margin-bottom: 8px;
+            color: #1f2933;
+            text-align: center;
+        }
+
+        p.subtitle {
+            margin-top: 0;
+            margin-bottom: 20px;
+            color: #6b7280;
+            font-size: 14px;
+            text-align: center;
+        }
+
+        label {
+            font-size: 14px;
+            color: #374151;
+            display: block;
+            margin-bottom: 6px;
+        }
+
+        input[type="email"] {
+            width: 100%;
+            padding: 10px 12px;
+            border-radius: 8px;
+            border: 1px solid #d1d5db;
+            font-size: 14px;
+            box-sizing: border-box;
+            margin-bottom: 16px;
+        }
+
+        input[type="email"]:focus {
+            outline: none;
+            border-color: #2563eb;
+            box-shadow: 0 0 0 1px #2563eb33;
+        }
+
+        .buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 8px;
+        }
+
+        button {
+            flex: 1;
+            padding: 10px 14px;
+            border-radius: 999px;
+            border: none;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.15s ease, transform 0.05s ease;
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+
+        #startBtn {
+            background: #10b981;
+            color: white;
+        }
+
+        #startBtn:hover {
+            background: #059669;
+        }
+
+        #stopBtn {
+            background: #ef4444;
+            color: white;
+        }
+
+        #stopBtn:hover {
+            background: #dc2626;
+        }
+
+        .status {
+            margin-top: 16px;
+            font-size: 14px;
+            min-height: 20px;
+        }
+
+        .status span {
+            display: inline-block;
+            padding: 6px 10px;
+            border-radius: 999px;
+            background: #f3f4f6;
+            color: #374151;
+        }
+
+        .note {
+            margin-top: 12px;
+            font-size: 12px;
+            color: #6b7280;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>Online Exam Monitoring</h1>
+        
+
+        <div class="video-container">
+            <img id="videoFeed" src="/video_feed" alt="Candidate camera feed" />
+        </div>
+
+        <label for="email">Student Email (for report):</label>
+        <input type="email" id="email" placeholder="student@example.com" />
+
+        <div class="buttons">
+            <button id="startBtn" type="button">Start Exam</button>
+            <button id="stopBtn" type="button">End Exam</button>
+        </div>
+
+        <div class="status" id="status"><span>Waiting for action…</span></div>
+        
+    </div>
+
+    <script>
+        const startBtn = document.getElementById("startBtn");
+        const stopBtn = document.getElementById("stopBtn");
+        const statusEl = document.getElementById("status");
+        const emailInput = document.getElementById("email");
+
+        function setStatus(text) {
+            statusEl.innerHTML = "<span>" + text + "</span>";
+        }
+
+        startBtn.addEventListener("click", async () => {
+            setStatus("Starting exam and capturing snapshot...");
+            try {
+                const res = await fetch("/start_exam", {
+                    method: "POST"
+                });
+                const text = await res.text();
+                setStatus(text || "Exam started.");
+            } catch (err) {
+                setStatus("Failed to start exam: " + err);
+            }
+        });
+
+        stopBtn.addEventListener("click", async () => {
+            const email = emailInput.value.trim();
+            if (!email) {
+                setStatus("Please enter the student's email before ending the exam.");
+                return;
+            }
+
+            setStatus("Ending exam, generating PDF and sending email...");
+
+            try {
+                const formData = new FormData();
+                formData.append("email", email);
+
+                const res = await fetch("/stop_exam", {
+                    method: "POST",
+                    body: formData
+                });
+
+                const text = await res.text();
+                setStatus(text || "Exam completed and report sent.");
+            } catch (err) {
+                setStatus("Failed to end exam: " + err);
+            }
+        });
+    </script>
+</body>
+</html>
